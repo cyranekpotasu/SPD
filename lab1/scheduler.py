@@ -29,15 +29,15 @@ class Scheduler:
     def johnsons_algorithm(self):
         """Find the optimal schedule using Johnson's algorithm."""
         machines_count = max(len(job.times) for job in self.jobs)
-        if machines_count > 2:
-            raise NotImplementedError
-        order = self._johnsons_two_machines()
+        if machines_count == 3:
+            order = self._johnsons_three_machines(self.jobs.copy())
+        else:
+            order = self._johnsons_two_machines(self.jobs.copy())
         makespan = get_makespan(order)
         return order, makespan
 
-    def _johnsons_two_machines(self):
-        jobs = self.jobs.copy()
-
+    @staticmethod
+    def _johnsons_two_machines(jobs: List[Job]):
         begin_list = []
         end_list = []
 
@@ -53,6 +53,13 @@ class Scheduler:
                 end_list.insert(0, jobs.pop(job_index))
 
         return begin_list + end_list
+
+    def _johnsons_three_machines(self, jobs):
+        virtual_tasks = [
+            Job(job.id, (job.times[0] + job.times[1], job.times[1] + job.times[2]))
+            for job in jobs
+        ]
+        return self._johnsons_two_machines(virtual_tasks)
 
 
 def get_makespan(job_list: Sequence[Job]) -> int:
