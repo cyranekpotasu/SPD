@@ -12,7 +12,7 @@ class Job(NamedTuple):
 
 
 class Scheduler:
-    def __init__(self, jobs: Sequence[Job]) -> None:
+    def __init__(self, jobs: List[Job]) -> None:
         self.jobs = jobs
 
     def complete_review(self):
@@ -25,6 +25,34 @@ class Scheduler:
         best_makespan = min(makespans)
 
         return perms[makespans.index(best_makespan)], best_makespan
+
+    def johnsons_algorithm(self):
+        """Find the optimal schedule using Johnson's algorithm."""
+        machines_count = max(len(job.times) for job in self.jobs)
+        if machines_count > 2:
+            raise NotImplementedError
+        order = self._johnsons_two_machines()
+        makespan = get_makespan(order)
+        return order, makespan
+
+    def _johnsons_two_machines(self):
+        jobs = self.jobs.copy()
+
+        begin_list = []
+        end_list = []
+
+        while jobs:
+            min_time = min(time for job in jobs for time in job.times)
+            shortest_jobs = [job for job in jobs if min_time in job.times]
+            job = shortest_jobs[0]
+            job_index = jobs.index(job)
+            machine_index = job.times.index(min_time)
+            if machine_index == 0:
+                begin_list.append(jobs.pop(job_index))
+            else:
+                end_list.insert(0, jobs.pop(job_index))
+
+        return begin_list + end_list
 
 
 def get_makespan(job_list: Sequence[Job]) -> int:
