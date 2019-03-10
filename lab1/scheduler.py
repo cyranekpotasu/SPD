@@ -7,6 +7,9 @@ class Job(NamedTuple):
     id: int
     times: Sequence[int]
 
+    def __eq__(self, other):
+        return self.id == other.id
+
 
 class Scheduler:
     def __init__(self, jobs: Sequence[Job]) -> None:
