@@ -1,6 +1,6 @@
 from typing import Sequence, NamedTuple, List
 from itertools import permutations
-
+import numpy as np
 
 class Job(NamedTuple):
     """Tuple storing data about job - its ID and times needed to complete for each machine."""
@@ -60,41 +60,51 @@ class Scheduler:
             for job in jobs
         ]
         return self._johnsons_two_machines(virtual_tasks)
+    
+    def array_with_zeros(self, array):
+
+        array_zero = [ [ 0 for jobs in range(len(array[0]) + 1)]  for i in range(len(array) + 1 ) ]
+        for i in range(len(array[0])):
+            for j in range(len(array)):           
+                array_zero[j+1][i+1] = array[j][i]
+        return array_zero
+
+  # Zwraca cmax dla kolejności wg tabeli 
+    def compile_timeline(self,array):
+
+        cmax_table = self.array_with_zeros(array)
+
+        
+        for i in range(len(cmax_table[0])-1):
+            for j in range(len(cmax_table)-1):
+                cmax_table[j+1][i+1] = max(int(cmax_table[j+1][i]),int(cmax_table[j][i+1])) + int(cmax_table[j+1][i+1])
+
+        return cmax_table[len(cmax_table)-1][len(cmax_table[0])-1]
+
+    # segraguje indeksy wg sumy wag 
+    def max_value_id(self, array):
+        
+        id = []
+        x = array
+        
+        for i in array:
+            max = np.argmax(array)
+            array[max] = -1
+            id.append(max)
+  
+        return id    
+
+    def neh_algoritm(self,array):
+        job_weight = np.sum(array, axis = 1)
+        id_weight = self.max_value_id(job_weight)
+
+        sort_array  = array[id_weight]
+
+        
 
 
-def get_makespan(job_list: Sequence[Job]) -> int:
-    """Get total makespan of scheduled jobs."""
-    timeline = compile_timeline(job_list)
-    return timeline[-1][-1] + job_list[-1].times[-1]
+        
 
 
-def compile_timeline(job_list: Sequence[Job]) -> List[List[int]]:
-    """Compile given job permutation, return matrix in which rows represent
-    machine id and columns job id."""
-    machines_count = max(len(job.times) for job in job_list)
 
-    machine_times = [[] for _ in range(machines_count)]
-    machine_times[0].append(0)
 
-    jobs_iter = iter(job_list)
-    first_job = next(jobs_iter)
-
-    for machine_index in range(1, machines_count):
-        machine_times[machine_index].append(
-            machine_times[machine_index - 1][0] + first_job.times[machine_index - 1]
-        )
-
-    prev_job = first_job
-
-    for job_index in range(1, len(job_list)):
-        job = job_list[job_index]
-        machine_times[0].append(machine_times[0][-1] + prev_job.times[0])
-
-        for machine_index in range(1, machines_count):
-            machine_times[machine_index].append(
-                max(machine_times[machine_index - 1][job_index] + job.times[machine_index - 1],
-                    machine_times[machine_index][job_index - 1] + prev_job.times[machine_index])
-            )
-        prev_job = job
-
-    return machine_times
