@@ -99,12 +99,28 @@ class Scheduler:
         id_weight = self.max_value_id(job_weight)
 
         sort_array  = array[id_weight]
+            
+                       
+        new = sort_array[range(2)]
 
         
+        for i in range(len(sort_array)):         
+            if(i > 0):
+                new = sort_array[range(i+1)]
+                for j in range(len(new)):
+                    if(j>0):    
+                        cmax1 = self.compile_timeline(new)
+                        
+                        new[[len(new) - j-1, len(new) -j]] = new[[len(new) - j, len(new)-j-1]]
+                        cmax2 = self.compile_timeline(new)
+                        
+                        if(cmax2 < cmax1):
+                            sort_array = np.vstack([new, sort_array[i+1:]]) #dopisywanie
+                        
+
+        return self.compile_timeline(sort_array)
+            
 
 
-        
 
-
-
-
+              
