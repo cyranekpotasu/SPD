@@ -2,8 +2,12 @@ from scheduler import Job, Scheduler
 import numpy as np
 
 if __name__ == '__main__':
-    jobs = np.loadtxt('data.txt', skiprows=1, dtype=int)
 
+    i = np.loadtxt('data.txt', dtype=int)
+    jobs = [Job(j,i[j]) for j in range(len(i))]
+    
     sched = Scheduler(jobs)
-    print(sched.neh_algoritm(jobs))
-
+    sched.neh_algorihtm(jobs)
+    
+    
+    

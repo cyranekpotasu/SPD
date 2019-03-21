@@ -62,55 +62,90 @@ class Scheduler:
         ]
         return self._johnsons_two_machines(virtual_tasks)
 
-    def array_with_zeros(self, array):
-        array_zero = [[0 for jobs in range(len(array[0]) + 1)] for i in range(len(array) + 1)]
-        for i in range(len(array[0])):
-            for j in range(len(array)):
-                array_zero[j + 1][i + 1] = array[j][i]
-        return array_zero
+    def sort_array(self,jobs: List[Job]):
 
-    def compile_timeline(self, array):
-        """Compute makespan."""
-        cmax_table = self.array_with_zeros(array)
 
-        for i in range(len(cmax_table[0]) - 1):
-            for j in range(len(cmax_table) - 1):
-                cmax_table[j + 1][i + 1] = max(int(cmax_table[j + 1][i]), int(cmax_table[j][i + 1])) + int(
-                    cmax_table[j + 1][i + 1])
+        sort = []
+        weight = np.array([[job.id, (np.sum(job.times))] for job in jobs])
+        weight  = weight[weight[:,1].argsort()]
 
-        return cmax_table[len(cmax_table) - 1][len(cmax_table[0]) - 1]
+        for i in range(len(weight)):
+            sort.append(jobs[weight[i][0]])
+        return sort[::-1]
 
-    def max_value_id(self, array):
-        """Sort jobs by sum of their machine times."""
-        id = []
-        x = array
+    def neh(self,jobs: List[Job] ):
 
-        for i in array:
-            max = np.argmax(array)
-            array[max] = -1
-            id.append(max)
 
-        return id
+        new = jobs.copy()
+        for j in range(len(jobs)):
+            if(j>0):
 
-    def neh_algorithm(self, array):
-        job_weight = np.sum(array, axis=1)
-        id_weight = self.max_value_id(job_weight)
+                cmax1 = get_makespan(new)
+                x = new[len(jobs)-j]
+                new[len(new)-j] = new[len(new)-1-j]
+                new[len(new)-1-j] = x
 
-        sort_array = array[id_weight]
+                cmax2 = get_makespan(new)
 
-        new = sort_array[range(2)]
+                if(cmax2<cmax1):
+                    jobs = new
 
-        for i in range(len(sort_array)):
-            if i > 0:
-                new = sort_array[range(i + 1)]
-                for j in range(len(new)):
-                    if j > 0:
-                        cmax1 = self.compile_timeline(new)
+        return jobs
 
-                        new[[len(new) - j - 1, len(new) - j]] = new[[len(new) - j, len(new) - j - 1]]
-                        cmax2 = self.compile_timeline(new)
 
-                        if cmax2 < cmax1:
-                            sort_array = np.vstack([new, sort_array[i + 1:]])  # dopisywanie
+    def neh_algorihtm(self,jobs: List[Job]):
 
-        return self.compile_timeline(sort_array)
+        sort_weight = self.sort_array(self.jobs.copy())
+        tmp = []
+        tmp.append(jobs[sort_weight[0][0]])
+        t = []
+
+        for i in range(len(sort_weight)):
+            if(i>0):
+                tmp.append(jobs[sort_weight[i][0]])
+                tmp = self.neh(tmp)
+
+        for i in range(len(tmp)):
+            t.append(tmp[i][0] + 1)
+
+        print(get_makespan(tmp))
+        print(t)
+
+
+
+def get_makespan(job_list: Sequence[Job]) -> int:
+    """Get total makespan of scheduled jobs."""
+    timeline = compile_timeline(job_list)
+    return timeline[-1][-1] + job_list[-1].times[-1]
+
+
+def compile_timeline(job_list: Sequence[Job]) -> List[List[int]]:
+    """Compile given job permutation, return matrix in which rows represent
+    machine id and columns job id."""
+    machines_count = max(len(job.times) for job in job_list)
+
+    machine_times = [[] for _ in range(machines_count)]
+    machine_times[0].append(0)
+
+    jobs_iter = iter(job_list)
+    first_job = next(jobs_iter)
+
+    for machine_index in range(1, machines_count):
+        machine_times[machine_index].append(
+            machine_times[machine_index - 1][0] + first_job.times[machine_index - 1]
+        )
+
+    prev_job = first_job
+
+    for job_index in range(1, len(job_list)):
+        job = job_list[job_index]
+        machine_times[0].append(machine_times[0][-1] + prev_job.times[0])
+
+        for machine_index in range(1, machines_count):
+            machine_times[machine_index].append(
+                max(machine_times[machine_index - 1][job_index] + job.times[machine_index - 1],
+                    machine_times[machine_index][job_index - 1] + prev_job.times[machine_index])
+            )
+        prev_job = job
+
+    return machine_times
