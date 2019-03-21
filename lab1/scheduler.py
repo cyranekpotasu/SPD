@@ -62,46 +62,39 @@ class Scheduler:
         ]
         return self._johnsons_two_machines(virtual_tasks)
 
-    def sort_array(self,jobs: List[Job]):
-
-
+    def sort_array(self, jobs: List[Job]):
         sort = []
         weight = np.array([[job.id, (np.sum(job.times))] for job in jobs])
-        weight  = weight[weight[:,1].argsort()]
+        weight = weight[weight[:, 1].argsort()]
 
         for i in range(len(weight)):
             sort.append(jobs[weight[i][0]])
         return sort[::-1]
 
-    def neh(self,jobs: List[Job] ):
-
-
+    def neh(self, jobs: List[Job]):
         new = jobs.copy()
         for j in range(len(jobs)):
-            if(j>0):
-
+            if j > 0:
                 cmax1 = get_makespan(new)
-                x = new[len(jobs)-j]
-                new[len(new)-j] = new[len(new)-1-j]
-                new[len(new)-1-j] = x
+                x = new[len(jobs) - j]
+                new[len(new) - j] = new[len(new) - 1 - j]
+                new[len(new) - 1 - j] = x
 
                 cmax2 = get_makespan(new)
 
-                if(cmax2<cmax1):
+                if cmax2 < cmax1:
                     jobs = new
 
         return jobs
 
-
-    def neh_algorihtm(self,jobs: List[Job]):
+    def neh_algorihtm(self, jobs: List[Job]):
 
         sort_weight = self.sort_array(self.jobs.copy())
-        tmp = []
-        tmp.append(jobs[sort_weight[0][0]])
+        tmp = [jobs[sort_weight[0][0]]]
         t = []
 
         for i in range(len(sort_weight)):
-            if(i>0):
+            if i > 0:
                 tmp.append(jobs[sort_weight[i][0]])
                 tmp = self.neh(tmp)
 
@@ -109,7 +102,6 @@ class Scheduler:
             t.append(tmp[i][0] + 1)
 
         return get_makespan(tmp), t
-
 
 
 def get_makespan(job_list: Sequence[Job]) -> int:
