@@ -62,14 +62,12 @@ class Scheduler:
         ]
         return self._johnsons_two_machines(virtual_tasks)
 
-    def sort_array(self, jobs: List[Job]):
-        sort = []
-        weight = np.array([[job.id, (np.sum(job.times))] for job in jobs])
-        weight = weight[weight[:, 1].argsort()]
+    def sorted_by_weight(self, jobs: List[Job]):
+        weights = np.array([[job.id, (np.sum(job.times))] for job in jobs])
+        sorted_weights = weights[weights[:, 1].argsort()][::-1]
 
-        for i in range(len(weight)):
-            sort.append(jobs[weight[i][0]])
-        return sort[::-1]
+        sorted_jobs = [jobs[index] for index, _ in sorted_weights]
+        return sorted_jobs
 
     def neh(self, jobs: List[Job]):
         new = jobs.copy()
@@ -84,12 +82,10 @@ class Scheduler:
 
                 if cmax2 < cmax1:
                     jobs = new
-
         return jobs
 
     def neh_algorihtm(self, jobs: List[Job]):
-
-        sort_weight = self.sort_array(self.jobs.copy())
+        sort_weight = self.sorted_by_weight(self.jobs.copy())
         tmp = [jobs[sort_weight[0][0]]]
         t = []
 

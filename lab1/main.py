@@ -10,6 +10,3 @@ if __name__ == '__main__':
     makespan, job_order = sched.neh_algorihtm(jobs)
     print('Total makespan: ', makespan)
     print('Job order: ', job_order)
-    
-    
-    
