@@ -3,8 +3,8 @@ import numpy as np
 
 if __name__ == '__main__':
 
-    i = np.loadtxt('data.txt', dtype=int)
-    jobs = [Job(j,i[j]) for j in range(len(i))]
+    job_data = np.loadtxt('data.txt', dtype=int)
+    jobs = [Job(job_id, times) for job_id, times in enumerate(job_data)]
     
     sched = Scheduler(jobs)
     sched.neh_algorihtm(jobs)
