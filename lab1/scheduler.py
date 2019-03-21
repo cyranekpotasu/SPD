@@ -108,8 +108,7 @@ class Scheduler:
         for i in range(len(tmp)):
             t.append(tmp[i][0] + 1)
 
-        print(get_makespan(tmp))
-        print(t)
+        return get_makespan(tmp), t
 
 
 

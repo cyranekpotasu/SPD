@@ -7,7 +7,9 @@ if __name__ == '__main__':
     jobs = [Job(job_id, times) for job_id, times in enumerate(job_data)]
     
     sched = Scheduler(jobs)
-    sched.neh_algorihtm(jobs)
+    makespan, job_order = sched.neh_algorihtm(jobs)
+    print('Total makespan: ', makespan)
+    print('Job order: ', job_order)
     
     
     
