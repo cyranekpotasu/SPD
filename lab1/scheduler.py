@@ -1,4 +1,4 @@
-from typing import Sequence, NamedTuple, List, Generator
+from typing import Sequence, NamedTuple, List, Generator, Optional
 from itertools import permutations
 import numpy as np
 
@@ -83,16 +83,37 @@ class Scheduler:
                 best_position = i
         return best_position
 
-    def neh_algorihtm(self, jobs: List[Job]):
+    def neh_algorihtm(self, jobs: List[Job], improvement=0):
         sorted_jobs = self.sorted_by_weight(self.jobs.copy())
         solution = [jobs[sorted_jobs.pop(0).id]]
 
         for job in sorted_jobs:
             position = self.find_insert_position(solution, job)
             solution.insert(position, job)
+            if improvement == 1:
+                max_machine_time_index = self.neh_ir1(solution, job)
+                if max_machine_time_index is not None:
+                    max_machine_time_job = solution.pop(max_machine_time_index)
+                    position = self.find_insert_position(solution, max_machine_time_job)
+                    solution.insert(position, max_machine_time_job)
 
         solution_order = [job.id + 1 for job in solution]
         return get_makespan(solution), solution_order
+
+    def neh_ir1(self, current_solution: List[Job], current_job: Job) -> Optional[int]:
+        """Neh IR1 improvement implementation."""
+        max_machine_time = 0
+        max_index = None
+        for index, job in enumerate(current_solution):
+            job_max_time = max(job.times)
+            if job_max_time > max_machine_time:
+                max_machine_time = job_max_time
+                max_index = index
+        if current_solution[max_index] == current_job:
+            return None
+        return max_index
+
+
 
 
 
