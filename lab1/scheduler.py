@@ -1,4 +1,4 @@
-from typing import Sequence, NamedTuple, List
+from typing import Sequence, NamedTuple, List, Generator
 from itertools import permutations
 import numpy as np
 
@@ -102,37 +102,18 @@ class Scheduler:
 
 def get_makespan(job_list: Sequence[Job]) -> int:
     """Get total makespan of scheduled jobs."""
-    timeline = compile_timeline(job_list)
-    return timeline[-1][-1] + job_list[-1].times[-1]
+    times_arr = np.array([job.times for job in job_list])
+    machine_times = count_job_times(times_arr)
+    return machine_times[-1][-1]
 
 
-def compile_timeline(job_list: Sequence[Job]) -> List[List[int]]:
-    """Compile given job permutation, return matrix in which rows represent
-    machine id and columns job id."""
-    machines_count = max(len(job.times) for job in job_list)
-
-    machine_times = [[] for _ in range(machines_count)]
-    machine_times[0].append(0)
-
-    jobs_iter = iter(job_list)
-    first_job = next(jobs_iter)
-
-    for machine_index in range(1, machines_count):
-        machine_times[machine_index].append(
-            machine_times[machine_index - 1][0] + first_job.times[machine_index - 1]
-        )
-
-    prev_job = first_job
-
-    for job_index in range(1, len(job_list)):
-        job = job_list[job_index]
-        machine_times[0].append(machine_times[0][-1] + prev_job.times[0])
-
-        for machine_index in range(1, machines_count):
-            machine_times[machine_index].append(
-                max(machine_times[machine_index - 1][job_index] + job.times[machine_index - 1],
-                    machine_times[machine_index][job_index - 1] + prev_job.times[machine_index])
-            )
-        prev_job = job
-
-    return machine_times
+def count_job_times(times_array: np.ndarray) -> np.ndarray:
+    """Count completion times for each job for each machine,
+    return as numpy array."""
+    job_count, machine_count = times_array.shape
+    makespan_array = np.pad(times_array, ((1, 0), (1, 0)), 'constant')
+    for i in range(1, job_count + 1):
+        for j in range(1, machine_count + 1):
+            makespan_array[i, j] = max(makespan_array[i - 1, j],
+                                       makespan_array[i, j - 1]) + makespan_array[i, j]
+    return makespan_array
