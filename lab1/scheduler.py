@@ -69,10 +69,9 @@ class Scheduler:
         sorted_jobs = [jobs[index] for index, _ in sorted_weights]
         return sorted_jobs
 
-    def find_shortest_makespan(self, current_solution: List[Job],
-                               job: Job) -> int:
-        """Find shortest possible makespan when inserting next job
-        to existing solution."""
+    def find_insert_position(self, current_solution: List[Job],
+                             job: Job) -> int:
+        """Find position for which new makespan will be the shortest."""
         shortest_makespan = float("inf")
         best_position = None
         for i in range(len(current_solution) + 1):
@@ -89,7 +88,7 @@ class Scheduler:
         solution = [jobs[sorted_jobs.pop(0).id]]
 
         for job in sorted_jobs:
-            position = self.find_shortest_makespan(solution, job)
+            position = self.find_insert_position(solution, job)
             solution.insert(position, job)
 
         solution_order = [job.id + 1 for job in solution]
