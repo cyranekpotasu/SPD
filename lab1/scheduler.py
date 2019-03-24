@@ -114,9 +114,6 @@ class Scheduler:
         return max_index
 
 
-
-
-
 def get_makespan(job_list: Sequence[Job]) -> int:
     """Get total makespan of scheduled jobs."""
     times_arr = np.array([job.times for job in job_list])
