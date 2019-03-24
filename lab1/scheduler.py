@@ -69,35 +69,32 @@ class Scheduler:
         sorted_jobs = [jobs[index] for index, _ in sorted_weights]
         return sorted_jobs
 
-    def neh(self, jobs: List[Job]):
-        new = jobs.copy()
-        for j in range(len(jobs)):
-            if j > 0:
-                cmax1 = get_makespan(new)
-                x = new[len(jobs) - j]
-                new[len(new) - j] = new[len(new) - 1 - j]
-                new[len(new) - 1 - j] = x
-
-                cmax2 = get_makespan(new)
-
-                if cmax2 < cmax1:
-                    jobs = new
-        return jobs
+    def find_shortest_makespan(self, current_solution: List[Job],
+                               job: Job) -> int:
+        """Find shortest possible makespan when inserting next job
+        to existing solution."""
+        shortest_makespan = float("inf")
+        best_position = None
+        for i in range(len(current_solution) + 1):
+            new_solution = current_solution[:]
+            new_solution.insert(i, job)
+            makespan = get_makespan(new_solution)
+            if makespan < shortest_makespan:
+                shortest_makespan = makespan
+                best_position = i
+        return best_position
 
     def neh_algorihtm(self, jobs: List[Job]):
-        sort_weight = self.sorted_by_weight(self.jobs.copy())
-        tmp = [jobs[sort_weight[0][0]]]
-        t = []
+        sorted_jobs = self.sorted_by_weight(self.jobs.copy())
+        solution = [jobs[sorted_jobs.pop(0).id]]
 
-        for i in range(len(sort_weight)):
-            if i > 0:
-                tmp.append(jobs[sort_weight[i][0]])
-                tmp = self.neh(tmp)
+        for job in sorted_jobs:
+            position = self.find_shortest_makespan(solution, job)
+            solution.insert(position, job)
 
-        for i in range(len(tmp)):
-            t.append(tmp[i][0] + 1)
+        solution_order = [job.id + 1 for job in solution]
+        return get_makespan(solution), solution_order
 
-        return get_makespan(tmp), t
 
 
 def get_makespan(job_list: Sequence[Job]) -> int:
