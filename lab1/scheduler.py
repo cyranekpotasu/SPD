@@ -1,4 +1,4 @@
-from typing import Sequence, NamedTuple, List, Generator
+from typing import Sequence, NamedTuple, List, Generator, Optional
 from itertools import permutations
 import numpy as np
 
@@ -69,35 +69,49 @@ class Scheduler:
         sorted_jobs = [jobs[index] for index, _ in sorted_weights]
         return sorted_jobs
 
-    def neh(self, jobs: List[Job]):
-        new = jobs.copy()
-        for j in range(len(jobs)):
-            if j > 0:
-                cmax1 = get_makespan(new)
-                x = new[len(jobs) - j]
-                new[len(new) - j] = new[len(new) - 1 - j]
-                new[len(new) - 1 - j] = x
+    def find_insert_position(self, current_solution: List[Job],
+                             job: Job) -> int:
+        """Find position for which new makespan will be the shortest."""
+        shortest_makespan = float("inf")
+        best_position = None
+        for i in range(len(current_solution) + 1):
+            new_solution = current_solution[:]
+            new_solution.insert(i, job)
+            makespan = get_makespan(new_solution)
+            if makespan < shortest_makespan:
+                shortest_makespan = makespan
+                best_position = i
+        return best_position
 
-                cmax2 = get_makespan(new)
+    def neh_algorihtm(self, jobs: List[Job], improvement=0):
+        sorted_jobs = self.sorted_by_weight(self.jobs.copy())
+        solution = [jobs[sorted_jobs.pop(0).id]]
 
-                if cmax2 < cmax1:
-                    jobs = new
-        return jobs
+        for job in sorted_jobs:
+            position = self.find_insert_position(solution, job)
+            solution.insert(position, job)
+            if improvement == 1:
+                max_machine_time_index = self.neh_ir1(solution, job)
+                if max_machine_time_index is not None:
+                    max_machine_time_job = solution.pop(max_machine_time_index)
+                    position = self.find_insert_position(solution, max_machine_time_job)
+                    solution.insert(position, max_machine_time_job)
 
-    def neh_algorihtm(self, jobs: List[Job]):
-        sort_weight = self.sorted_by_weight(self.jobs.copy())
-        tmp = [jobs[sort_weight[0][0]]]
-        t = []
+        solution_order = [job.id + 1 for job in solution]
+        return get_makespan(solution), solution_order
 
-        for i in range(len(sort_weight)):
-            if i > 0:
-                tmp.append(jobs[sort_weight[i][0]])
-                tmp = self.neh(tmp)
-
-        for i in range(len(tmp)):
-            t.append(tmp[i][0] + 1)
-
-        return get_makespan(tmp), t
+    def neh_ir1(self, current_solution: List[Job], current_job: Job) -> Optional[int]:
+        """Neh IR1 improvement implementation."""
+        max_machine_time = 0
+        max_index = None
+        for index, job in enumerate(current_solution):
+            job_max_time = max(job.times)
+            if job_max_time > max_machine_time:
+                max_machine_time = job_max_time
+                max_index = index
+        if current_solution[max_index] == current_job:
+            return None
+        return max_index
 
 
 def get_makespan(job_list: Sequence[Job]) -> int:
