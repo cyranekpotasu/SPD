@@ -83,9 +83,9 @@ class Scheduler:
                 best_position = i
         return best_position
 
-    def neh_algorihtm(self, jobs: List[Job], improvement=0):
+    def neh_algorithm(self, improvement=0):
         sorted_jobs = self.sorted_by_weight(self.jobs.copy())
-        solution = [jobs[sorted_jobs.pop(0).id]]
+        solution = [self.jobs[sorted_jobs.pop(0).id]]
 
         for job in sorted_jobs:
             position = self.find_insert_position(solution, job)
