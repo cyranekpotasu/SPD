@@ -12,9 +12,9 @@ if __name__ == '__main__':
 
         print(path)
         sched = Scheduler(jobs)
-        makespan, job_order = sched.neh_algorihtm(jobs)
+        makespan, job_order = sched.neh_algorithm()
         print('Total makespan: ', makespan)
         print('Job order: ', job_order)
-        makespan, job_order = sched.neh_algorihtm(jobs, improvement=1)
+        makespan, job_order = sched.neh_algorithm(improvement=1)
         print('Total makespan: ', makespan)
         print('Job order: ', job_order)

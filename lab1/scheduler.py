@@ -18,14 +18,16 @@ class Scheduler:
 
     def complete_review(self):
         """Find the optimal schedule using complete review algorithm."""
-        perms = list(permutations(self.jobs))
-        makespans = []
+        perms = permutations(self.jobs)
+        best_makespan = float('inf')
+        best_permutation = None
         for perm in perms:
-            makespans.append(get_makespan(perm))
+            makespan = get_makespan(perm)
+            if makespan < best_makespan:
+                best_makespan = makespan
+                best_permutation = perm
 
-        best_makespan = min(makespans)
-
-        return perms[makespans.index(best_makespan)], best_makespan
+        return best_permutation, best_makespan
 
     def johnsons_algorithm(self):
         """Find the optimal schedule using Johnson's algorithm."""
@@ -83,9 +85,9 @@ class Scheduler:
                 best_position = i
         return best_position
 
-    def neh_algorihtm(self, jobs: List[Job], improvement=0):
+    def neh_algorithm(self, improvement=0):
         sorted_jobs = self.sorted_by_weight(self.jobs.copy())
-        solution = [jobs[sorted_jobs.pop(0).id]]
+        solution = [self.jobs[sorted_jobs.pop(0).id]]
 
         for job in sorted_jobs:
             position = self.find_insert_position(solution, job)
