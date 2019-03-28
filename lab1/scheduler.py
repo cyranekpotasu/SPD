@@ -114,8 +114,36 @@ class Scheduler:
         if current_solution[max_index] == current_job:
             return None
         return max_index
+    
+    def sa(self):
+        """Simulated annealing implementation"""
+        job_sa = self.sim_annealing()
+        solution_order = [job.id + 1 for job in job_sa]
+        return get_makespan(job_sa), solution_order
 
-
+    def sim_annealing(self):
+        t = 10000
+        t_k = 0.0001
+        wsp = 0.99
+        job_f = self.jobs.copy()
+        while True:
+            perm = np.random.permutation(job_f)
+            job_new = [Job(job_id, times) for job_id, times in perm]
+            f = get_makespan(job_f)
+            f_n =  get_makespan(job_new)
+            if(f < f_n):
+                if(t > t_k):
+                    t = t*wsp
+                else:
+                    return job_f
+            else:
+                if(np.random.uniform(0,1) < np.exp((f_n - f) / t) ):
+                    job_f = job_new
+                    if(t > t_k):
+                        t = t*wsp
+                    else:
+                        return job_f
+            
 def get_makespan(job_list: Sequence[Job]) -> int:
     """Get total makespan of scheduled jobs."""
     times_arr = np.array([job.times for job in job_list])
