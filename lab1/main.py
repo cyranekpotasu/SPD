@@ -7,7 +7,7 @@ from scheduler import Job, Scheduler
 if __name__ == '__main__':
 
     for path in os.listdir('data'):
-        job_data = np.loadtxt(f'data/{path}', dtype=int, skiprows=1)
+        job_data = np.loadtxt(f'data/{path}', dtype=int, skiprows=1 )
         jobs = [Job(job_id, times) for job_id, times in enumerate(job_data)]
 
         print(path)
