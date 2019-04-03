@@ -98,7 +98,12 @@ class Scheduler:
                     max_machine_time_job = solution.pop(max_machine_time_index)
                     position = self.find_insert_position(solution, max_machine_time_job)
                     solution.insert(position, max_machine_time_job)
-
+        return solution
+        # solution_order = [job.id + 1 for job in solution]
+        # return get_makespan(solution), solution_order
+    
+    def neh_sorted_list(self):
+        solution = self.neh_algorithm()
         solution_order = [job.id + 1 for job in solution]
         return get_makespan(solution), solution_order
 
@@ -115,35 +120,51 @@ class Scheduler:
             return None
         return max_index
     
-    def sa(self):
+    def sa(self, job: List[Job]):
         """Simulated annealing implementation"""
-        job_sa = self.sim_annealing()
+        
+        job_sa = self.sim_annealing(job)
         solution_order = [job.id + 1 for job in job_sa]
         return get_makespan(job_sa), solution_order
 
-    def sim_annealing(self):
-        t = 10000
-        t_k = 0.0001
+    def sim_annealing(self, jobs: List[Job] ):
+        t = 1000
+        t_k = 0.1
         wsp = 0.99
-        job_f = self.jobs.copy()
+        step = 0
+        job_f = jobs.copy()
+        
         while True:
-            perm = np.random.permutation(job_f)
-            job_new = [Job(job_id, times) for job_id, times in perm]
+            job_new = self.insert(job_f)
+            #job_new = self.swap(job_f, np.random.randint(len(job_f)), np.random.randint(len(job_f)))
             f = get_makespan(job_f)
-            f_n =  get_makespan(job_new)
-            if(f < f_n):
-                if(t > t_k):
+            f_n = get_makespan(job_new)
+            step +=1
+            print(t)
+            if f < f_n:        
+                if t > t_k:
+                    
                     t = t*wsp
                 else:
-                    return job_f
+                    return jobs
             else:
-                if(np.random.uniform(0,1) < np.exp((f_n - f) / t) ):
+                if np.random.uniform(0,1) < np.exp((f_n - f) / t) :
                     job_f = job_new
-                    if(t > t_k):
+                    if t > t_k:
+                        
                         t = t*wsp
                     else:
-                        return job_f
-            
+                        return jobs
+
+    def swap(self, job: List[Job], pos1: int, pos2: int):
+        job[pos1], job[pos2] = job[pos2], job[pos1]
+        return job 
+
+    def insert(self, job: List[Job]):
+        tmp = job.pop( np.random.randint(len(job)))
+        job.insert(np.random.randint(len(job)), tmp)
+        return job
+
 def get_makespan(job_list: Sequence[Job]) -> int:
     """Get total makespan of scheduled jobs."""
     times_arr = np.array([job.times for job in job_list])
@@ -161,3 +182,4 @@ def count_job_times(times_array: np.ndarray) -> np.ndarray:
             makespan_array[i, j] = max(makespan_array[i - 1, j],
                                        makespan_array[i, j - 1]) + makespan_array[i, j]
     return makespan_array
+
