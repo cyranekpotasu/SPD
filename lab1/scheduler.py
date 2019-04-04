@@ -129,7 +129,7 @@ class Scheduler:
 
     def sim_annealing(self, jobs: List[Job] ):
         t = 100000
-        wsp = 0.95
+        wsp = 0000.95
         job_f = jobs.copy()
         for i in range(10000):
             job_new = self.insert(job_f.copy())
