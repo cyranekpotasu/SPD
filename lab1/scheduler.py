@@ -128,33 +128,18 @@ class Scheduler:
         return get_makespan(job_sa), solution_order
 
     def sim_annealing(self, jobs: List[Job] ):
-        t = 1000
-        t_k = 0.1
-        wsp = 0.99
-        step = 0
+        t = 100000
+        wsp = 0.95
         job_f = jobs.copy()
-        
-        while True:
-            job_new = self.insert(job_f)
-            #job_new = self.swap(job_f, np.random.randint(len(job_f)), np.random.randint(len(job_f)))
+        for i in range(10000):
+            job_new = self.insert(job_f.copy())
+            #job_new = self.swap(job_f.copy(), np.random.randint(len(job_f)), np.random.randint(len(job_f)))
             f = get_makespan(job_f)
             f_n = get_makespan(job_new)
-            step +=1
-            print(t)
-            if f < f_n:        
-                if t > t_k:
-                    
-                    t = t*wsp
-                else:
-                    return jobs
-            else:
-                if np.random.uniform(0,1) < np.exp((f_n - f) / t) :
-                    job_f = job_new
-                    if t > t_k:
-                        
-                        t = t*wsp
-                    else:
-                        return jobs
+            if np.random.uniform(0, 1) < np.exp((f - f_n) / t):
+                job_f = job_new
+                t *= wsp
+        return job_f
 
     def swap(self, job: List[Job], pos1: int, pos2: int):
         job[pos1], job[pos2] = job[pos2], job[pos1]
