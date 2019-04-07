@@ -120,35 +120,46 @@ class Scheduler:
             return None
         return max_index
     
-    def sa(self, job: List[Job]):
+    def sim_annealing(self, initial_temp=100000, cooling_factor=0.95,
+                      iterations=10000, neighbour_func='insert',
+                      accept_equal=True):
         """Simulated annealing implementation"""
-        
-        job_sa = self.sim_annealing(job)
-        solution_order = [job.id + 1 for job in job_sa]
-        return get_makespan(job_sa), solution_order
+        jobs = self.jobs.copy()
+        if neighbour_func == 'insert':
+            neighbour_func = random_insert
+        else:
+            neighbour_func = random_swap
 
-    def sim_annealing(self, jobs: List[Job] ):
-        t = 100000
-        wsp = 0.95
-        job_f = jobs.copy()
-        for i in range(10000):
-            job_new = self.insert(job_f.copy())
-            #job_new = self.swap(job_f.copy(), np.random.randint(len(job_f)), np.random.randint(len(job_f)))
-            f = get_makespan(job_f)
-            f_n = get_makespan(job_new)
-            if np.random.uniform(0, 1) < np.exp((f - f_n) / t):
-                job_f = job_new
-                t *= wsp
-        return job_f
+        for i in range(iterations):
+            job_new = neighbour_func(jobs)
+            makespan = get_makespan(jobs)
+            next_makespan = get_makespan(job_new)
+            if not accept_equal and makespan == next_makespan:
+                continue
+            if (np.random.uniform(0, 1)
+                    < np.exp((makespan - next_makespan) / initial_temp)):
+                jobs = job_new
+                initial_temp *= cooling_factor
+        solution_order = [job.id + 1 for job in jobs]
+        return get_makespan(jobs), solution_order
 
-    def swap(self, job: List[Job], pos1: int, pos2: int):
-        job[pos1], job[pos2] = job[pos2], job[pos1]
-        return job 
 
-    def insert(self, job: List[Job]):
-        tmp = job.pop( np.random.randint(len(job)))
-        job.insert(np.random.randint(len(job)), tmp)
-        return job
+def random_swap(source_list: list):
+    """Swap two elements of list randomly."""
+    result_list = source_list.copy()
+    pos1, pos2 = (np.random.randint(len(source_list)),
+                  np.random.randint(len(source_list)))
+    result_list[pos1], result_list[pos2] = result_list[pos2], result_list[pos1]
+    return result_list
+
+
+def random_insert(source_list: list):
+    """Pop random item from a list and insert in random place."""
+    result_list = source_list.copy()
+    tmp = result_list.pop(np.random.randint(len(result_list)))
+    result_list.insert(np.random.randint(len(result_list)), tmp)
+    return result_list
+
 
 def get_makespan(job_list: Sequence[Job]) -> int:
     """Get total makespan of scheduled jobs."""
