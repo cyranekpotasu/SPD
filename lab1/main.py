@@ -1,4 +1,6 @@
 import os
+import timeit
+
 import numpy as np
 
 from scheduler import Job, Scheduler
@@ -22,6 +24,9 @@ if __name__ == '__main__':
     job_data = np.loadtxt('data/ta020.txt', dtype=int, skiprows=1)
     jobs = [Job(job_id, times) for job_id, times in enumerate(job_data)]
     sched = Scheduler(jobs)
+
+    print('NEH time: ', timeit.timeit('sched.neh_algorithm()', globals=globals(), number=1))
+    print('SA time: ', timeit.timeit('sched.sim_annealing()', globals=globals(), number=1))
 
     makespan, job_order = sched.neh_sorted_list()
     print('Total makespan: ', makespan)
