@@ -12,7 +12,7 @@ class Job(NamedTuple):
         return self.id == other.id
 
 
-def schrage_algorithm(jobs: List[Job]):
+def schrage_algorithm(jobs: List[Job]) -> List[Job]:
     """Implementation of Schrage algorithm."""
     jobs = jobs.copy()
     time = min(job.preparation for job in jobs)
@@ -31,6 +31,18 @@ def schrage_algorithm(jobs: List[Job]):
             ready_jobs.pop(ready_jobs.index(longest_delivery_job))
             perm.append(longest_delivery_job)
             time += longest_delivery_job.execution
-    return [job.id for job in perm]
+    return perm
 
 
+def compute_makespan(permutation: List[Job]):
+    """Compute makespan for given permutation of jobs."""
+    time = 0
+    makespan = 0
+    for job in permutation:
+        job_makespan = max(time, job.preparation) + job.execution + job.delivery
+        if job.preparation > time:
+            time += job.preparation - time + job.execution
+        else:
+            time += job.execution
+        makespan = max(makespan, job_makespan)
+    return makespan
