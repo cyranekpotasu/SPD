@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 
-from lab4.scheduler import Job, schrage_algorithm
+from scheduler import Job, schrage_algorithm
 
 if __name__ == '__main__':
     for path in os.listdir('data'):

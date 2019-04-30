@@ -18,11 +18,12 @@ def schrage_algorithm(jobs: List[Job]):
     time = min(job.preparation for job in jobs)
     perm = []
     ready_jobs = []
+    cmax = 0
     while jobs or ready_jobs:
         if jobs:
-            min_time = min(job.preparation for job in jobs)
-            ready_jobs.extend(job for job in jobs if job.preparation <= min_time)
+            ready_jobs.extend(job for job in jobs if job.preparation <= time)
             jobs = [job for job in jobs if job not in ready_jobs]
+            
         if not ready_jobs:
             time = min(job.preparation for job in jobs)
         else:
@@ -32,6 +33,10 @@ def schrage_algorithm(jobs: List[Job]):
             ready_jobs.pop(ready_jobs.index(longest_delivery_job))
             perm.append(longest_delivery_job)
             time += longest_delivery_job.execution
+            cmax = max(cmax, time + longest_delivery_job.delivery)
+            print(cmax)
     return [job.id for job in perm]
+
+
 
 
