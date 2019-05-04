@@ -2,7 +2,8 @@ import os
 
 import numpy as np
 
-from lab4.scheduler import Job, schrage_algorithm, compute_makespan
+from lab4.scheduler import (Job, schrage_algorithm, compute_makespan,
+                            schrage_pmtn)
 
 if __name__ == '__main__':
     for path in os.listdir('data'):
@@ -12,3 +13,4 @@ if __name__ == '__main__':
         makespan = compute_makespan(perm)
         print(f'Perm for {path}: {[job.id for job in perm]}')
         print(f'Makespan for {path}: {makespan}')
+        print(f'Makespan for pmtn: {schrage_pmtn(jobs)}')
