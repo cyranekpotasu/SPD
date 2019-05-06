@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 
 from lab4.job import Job
 from lab4.scheduler import (schrage_algorithm, compute_makespan,
-                            schrage_pmtn, schrage_heaps, schrage_pmtn_heaps)
+                            schrage_pmtn, schrage_heaps, schrage_pmtn_heaps,
+                            sim_annealing)
 
 
 def generate_jobs(count):
@@ -67,9 +68,12 @@ if __name__ == '__main__':
         print(f'Perm for {path}: {[job.id for job in perm]}')
         perm = schrage_heaps(jobs)
         print(f'Perm for {path} (using heaps): {[job.id for job in perm]}')
+        makespan_sa, perm_sa = sim_annealing(jobs.copy())
+        print(f'Perm after simulated annealing: {[job for job in perm_sa]}')
         print(f'Makespan for {path}: {makespan}')
         makespan = compute_makespan(perm)
         print(f'Makespan for {path} (using heaps): {makespan}')
+        print(f'Makespan for {path} after SA: {makespan_sa}')
         print(f'Makespan for pmtn: {schrage_pmtn(deepcopy(jobs))}')
         print(f'Makespan for pmtn (using heaps): {schrage_pmtn_heaps(deepcopy(jobs))}')
-    plot_schrage_pmtn()
+    # plot_schrage_pmtn()

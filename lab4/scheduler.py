@@ -1,5 +1,7 @@
 from typing import List
 
+import numpy as np
+
 from lab4.heap import Heap, HeapObject
 from lab4.job import Job
 
@@ -105,6 +107,32 @@ def schrage_pmtn_heaps(jobs: List[Job]) -> List[Job]:
             time += longest_delivery_job.execution
             makespan = max(makespan, time + longest_delivery_job.delivery)
     return makespan
+
+
+def sim_annealing(jobs, initial_temp=100000, cooling_factor=0.95,
+                  iterations=10000, accept_equal=True):
+    """Simulated annealing implementation"""
+    jobs = jobs.copy()
+    for i in range(iterations):
+        job_new = random_insert(jobs)
+        makespan = compute_makespan(jobs)
+        next_makespan = compute_makespan(job_new)
+        if not accept_equal and makespan == next_makespan:
+            continue
+        if (np.random.uniform(0, 1)
+                < np.exp((makespan - next_makespan) / initial_temp)):
+            jobs = job_new
+            initial_temp *= cooling_factor
+    solution_order = [job.id for job in jobs]
+    return compute_makespan(jobs), solution_order
+
+
+def random_insert(source_list: List[Job]):
+    """Pop random item from a list and insert in random place."""
+    result_list = source_list.copy()
+    tmp = result_list.pop(np.random.randint(len(result_list)))
+    result_list.insert(np.random.randint(len(result_list)), tmp)
+    return result_list
 
 
 def compute_makespan(permutation: List[Job]):
