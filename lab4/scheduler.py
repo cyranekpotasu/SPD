@@ -60,6 +60,53 @@ def schrage_pmtn(jobs: List[Job]) -> int:
     return makespan
 
 
+def schrage_heaps(jobs: List[Job]) -> List[Job]:
+    """Implementation of Schrage algorithm using heaps."""
+    jobs_heap = Heap([HeapObject(job, job.preparation) for job in jobs])
+    time = jobs_heap.peek().preparation
+    perm = []
+    ready_jobs = Heap()
+    while jobs_heap or ready_jobs:
+        while jobs_heap and jobs_heap.peek().preparation <= time:
+            shortest_prep_job = jobs_heap.pop()
+            ready_jobs.push(shortest_prep_job, -shortest_prep_job.delivery)
+        if not ready_jobs:
+            time = jobs_heap.peek().preparation
+        else:
+            longest_delivery_job = ready_jobs.pop()
+            perm.append(longest_delivery_job)
+            time += longest_delivery_job.execution
+    return perm
+
+
+def schrage_pmtn_heaps(jobs: List[Job]) -> List[Job]:
+    """Implementation of Schrage algorithm with interrupts using heaps."""
+    jobs_heap = Heap([HeapObject(job, job.preparation) for job in jobs])
+    time = jobs_heap.peek().preparation
+    makespan = 0
+    current_delivery = float('inf')
+    current_job = jobs_heap.peek()
+    ready_jobs = Heap()
+    while jobs_heap or ready_jobs:
+        while jobs_heap and jobs_heap.peek().preparation <= time:
+            shortest_prep_job = jobs_heap.pop()
+            ready_jobs.push(shortest_prep_job, -shortest_prep_job.delivery)
+            if shortest_prep_job.delivery > current_delivery:
+                current_job.execution = time - shortest_prep_job.preparation
+                time = shortest_prep_job.preparation
+                if current_job.execution > 0:
+                    ready_jobs.push(current_job, -current_job.delivery)
+        if not ready_jobs:
+            time = jobs_heap.peek().preparation
+        else:
+            longest_delivery_job = ready_jobs.pop()
+            current_job = longest_delivery_job
+            current_delivery = current_job.delivery
+            time += longest_delivery_job.execution
+            makespan = max(makespan, time + longest_delivery_job.delivery)
+    return makespan
+
+
 def compute_makespan(permutation: List[Job]):
     """Compute makespan for given permutation of jobs."""
     time = 0
