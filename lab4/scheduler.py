@@ -135,6 +135,12 @@ def random_insert(source_list: List[Job]):
     return result_list
 
 
+def carlier(jobs: List[Job]):
+    perm = schrage_heaps(jobs)
+    cmax_list = makespan_list(perm)
+    upper_bound = max(cmax_list)
+    begin_index = cmax_list.argmax()
+    begin = perm[begin_index]
 
 
 def makespan_list(permutation: List[Job]) -> np.ndarray:
