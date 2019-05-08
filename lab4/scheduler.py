@@ -135,15 +135,22 @@ def random_insert(source_list: List[Job]):
     return result_list
 
 
-def compute_makespan(permutation: List[Job]):
-    """Compute makespan for given permutation of jobs."""
+
+
+def makespan_list(permutation: List[Job]) -> np.ndarray:
     time = 0
-    makespan = 0
+    makespans = []
     for job in permutation:
         job_makespan = max(time, job.preparation) + job.execution + job.delivery
         if job.preparation > time:
             time += job.preparation - time + job.execution
         else:
             time += job.execution
-        makespan = max(makespan, job_makespan)
-    return makespan
+        makespans.append(job_makespan)
+    return np.array(makespans)
+
+
+def compute_makespan(permutation: List[Job]) -> int:
+    """Compute makespan for given permutation of jobs."""
+    makespans = makespan_list(permutation)
+    return np.max(makespans)
