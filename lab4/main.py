@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from lab4.job import Job
 from lab4.scheduler import (schrage_algorithm, compute_makespan,
                             schrage_pmtn, schrage_heaps, schrage_pmtn_heaps,
-                            sim_annealing)
+                            sim_annealing, carlier)
 
 
 def generate_jobs(count):
@@ -63,17 +63,11 @@ if __name__ == '__main__':
     for path in os.listdir('data'):
         job_data = np.loadtxt(f'data/{path}', dtype=int, skiprows=1)
         jobs = [Job(job_id, *times) for job_id, times in enumerate(job_data, 1)]
-        perm = schrage_algorithm(jobs)
-        makespan = compute_makespan(perm)
-        print(f'Perm for {path}: {[job.id for job in perm]}')
         perm = schrage_heaps(jobs)
-        print(f'Perm for {path} (using heaps): {[job.id for job in perm]}')
-        makespan_sa, perm_sa = sim_annealing(jobs.copy())
-        print(f'Perm after simulated annealing: {[job for job in perm_sa]}')
-        print(f'Makespan for {path}: {makespan}')
         makespan = compute_makespan(perm)
+        print(f'Perm for {path} (using heaps): {[job.id for job in perm]}')
         print(f'Makespan for {path} (using heaps): {makespan}')
-        print(f'Makespan for {path} after SA: {makespan_sa}')
-        print(f'Makespan for pmtn: {schrage_pmtn(deepcopy(jobs))}')
-        print(f'Makespan for pmtn (using heaps): {schrage_pmtn_heaps(deepcopy(jobs))}')
-    # plot_schrage_pmtn()
+        perm = carlier(jobs)
+        makespan = compute_makespan(perm)
+        print(f'Perm for {path} (carlier): {[job.id for job in perm]}')
+        print(f'Makespan for {path} (carlier): {makespan}')

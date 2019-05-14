@@ -1,4 +1,5 @@
-from typing import List
+from copy import deepcopy
+from typing import List, Tuple, Optional
 
 import numpy as np
 
@@ -83,6 +84,7 @@ def schrage_heaps(jobs: List[Job]) -> List[Job]:
 
 def schrage_pmtn_heaps(jobs: List[Job]) -> List[Job]:
     """Implementation of Schrage algorithm with interrupts using heaps."""
+    jobs = deepcopy(jobs)
     jobs_heap = Heap([HeapObject(job, job.preparation) for job in jobs])
     time = jobs_heap.peek().preparation
     makespan = 0
@@ -136,11 +138,57 @@ def random_insert(source_list: List[Job]):
 
 
 def carlier(jobs: List[Job]):
-    perm = schrage_heaps(jobs)
-    cmax_list = makespan_list(perm)
+    """Implementation of Carlier algorithm."""
+    jobs = schrage_heaps(jobs)
+    cmax_list = makespan_list(jobs)
     upper_bound = max(cmax_list)
-    begin_index = cmax_list.argmax()
-    begin = perm[begin_index]
+    b = cmax_list.argmax()
+    a = find_a(jobs, b, upper_bound)
+    c = find_c(jobs, a, b)
+    if c is None:
+        return jobs
+    block = jobs[(c + 1):(b + 1)]
+    block_params = find_block_params(block)
+    preparation_backup = jobs[c].preparation
+    jobs[c].preparation = max(jobs[c].preparation, block_params[0] + block_params[1])
+    lower_bound = schrage_pmtn_heaps(jobs)
+    lower_bound = max(sum(block_params), sum(find_block_params(block + [jobs[c]])), lower_bound)
+    if lower_bound < upper_bound:
+        return carlier(jobs)
+    jobs[c].preparation = preparation_backup
+    delivery_backup = jobs[c].delivery
+    jobs[c].delivery = max(jobs[c].delivery, block_params[1] + block_params[2])
+    lower_bound = schrage_pmtn_heaps(jobs)
+    lower_bound = max(sum(block_params), sum(find_block_params(block + [jobs[c]])), lower_bound)
+    if lower_bound < upper_bound:
+        return carlier(jobs)
+    jobs[c].delivery = delivery_backup
+    return jobs
+
+
+def find_a(jobs: List[Job], b_index: int, makespan: int) -> int:
+    """Find 'a' job for Carlier algorithm."""
+    p_sum = sum(job.execution for job in jobs[:b_index + 1])
+    q_max = jobs[b_index].delivery
+    for i, job in enumerate(jobs):
+        if i > b_index:
+            raise ValueError("Job 'a' not found.")
+        if job.preparation + p_sum + q_max == makespan:
+            return i
+        p_sum -= job.execution
+
+
+def find_c(jobs: List[Job], a_index: int, b_index: int) -> Optional[int]:
+    """Find 'c' job for Carlier algorithm."""
+    greater_deliveries = [index for index, job in enumerate(jobs[a_index:b_index])
+                          if job.delivery < jobs[b_index].delivery]
+    return greater_deliveries[-1] + a_index if greater_deliveries else None
+
+
+def find_block_params(block: List[Job]):
+    """Find R, P, Q parameters for critical path in Carlier's algorithm."""
+    return (min(job.preparation for job in block), sum(job.execution for job in block),
+            min(job.delivery for job in block))
 
 
 def makespan_list(permutation: List[Job]) -> np.ndarray:
