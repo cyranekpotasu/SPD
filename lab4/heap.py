@@ -12,6 +12,8 @@ class HeapObject(NamedTuple):
         return self.priority == other.priority
 
     def __gt__(self, other):
+        if self.priority == other.priority:
+            return self.job.id > other.job.id
         return self.priority > other.priority
 
     def __lt__(self, other):
