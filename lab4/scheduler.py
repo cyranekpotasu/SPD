@@ -3,8 +3,8 @@ from typing import List, Tuple, Optional
 
 import numpy as np
 
-from lab4.heap import Heap, HeapObject
-from lab4.job import Job
+from heap import Heap, HeapObject
+from job import Job
 
 
 def schrage_algorithm(jobs: List[Job]) -> List[Job]:
@@ -137,16 +137,22 @@ def random_insert(source_list: List[Job]):
     return result_list
 
 
-def carlier(jobs: List[Job]):
+def carlier(jobs: List[Job], best_perm=None):
     """Implementation of Carlier algorithm."""
     jobs = schrage_heaps(jobs)
     cmax_list = makespan_list(jobs)
-    upper_bound = max(cmax_list)
+    makespan = max(cmax_list)
+    if best_perm is None:
+        best_perm = deepcopy(jobs)
+    upper_bound = max(makespan_list(best_perm))
+    if upper_bound > makespan:
+        upper_bound = makespan
+        best_perm = deepcopy(jobs)
     b = cmax_list.argmax()
-    a = find_a(jobs, b, upper_bound)
+    a = find_a(jobs, b, makespan)
     c = find_c(jobs, a, b)
     if c is None:
-        return jobs
+        return best_perm
     block = jobs[(c + 1):(b + 1)]
     block_params = find_block_params(block)
     preparation_backup = jobs[c].preparation
@@ -154,16 +160,22 @@ def carlier(jobs: List[Job]):
     lower_bound = schrage_pmtn_heaps(jobs)
     lower_bound = max(sum(block_params), sum(find_block_params(block + [jobs[c]])), lower_bound)
     if lower_bound < upper_bound:
-        return carlier(jobs)
+        candidate = carlier(jobs, best_perm)
+        if max(makespan_list(candidate)) < upper_bound:
+            best_perm = candidate
+            upper_bound = max(makespan_list(candidate))
     jobs[c].preparation = preparation_backup
     delivery_backup = jobs[c].delivery
     jobs[c].delivery = max(jobs[c].delivery, block_params[1] + block_params[2])
-    lower_bound = schrage_pmtn_heaps(jobs)
+    lower_bound = schrage_pmtn(jobs)
     lower_bound = max(sum(block_params), sum(find_block_params(block + [jobs[c]])), lower_bound)
     if lower_bound < upper_bound:
-        return carlier(jobs)
+        candidate = carlier(jobs, best_perm)
+        if max(makespan_list(candidate)) < upper_bound:
+            best_perm = candidate
+            upper_bound = max(makespan_list(candidate))
     jobs[c].delivery = delivery_backup
-    return jobs
+    return best_perm
 
 
 def find_a(jobs: List[Job], b_index: int, makespan: int) -> int:
