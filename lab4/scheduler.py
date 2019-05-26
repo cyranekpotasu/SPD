@@ -137,6 +137,85 @@ def random_insert(source_list: List[Job]):
     return result_list
 
 
+class Carlier:
+    """Carlier algorithm scheduler."""
+    def __init__(self, jobs: List[Job]):
+        self.jobs = deepcopy(jobs)
+        self.best_perm = self.jobs
+        self.upper_bound = max(makespan_list(self.best_perm))
+        self._queue = [self.jobs]
+        self.nodes = 0
+
+    def schedule(self):
+        while self._queue:
+            self.jobs = self._queue.pop(0)
+            self._carlier_node()
+            self.nodes += 1
+        return self.best_perm
+
+    def _carlier_node(self):
+        self.jobs = schrage_heaps(self.jobs)
+        cmax_list = makespan_list(self.jobs)
+        makespan = max(cmax_list)
+        if self.upper_bound > makespan:
+            self.upper_bound = makespan
+            self.best_perm = deepcopy(self.jobs)
+        b = cmax_list.argmax()
+        a = self._find_a(b, makespan)
+        c = self._find_c(a, b)
+        if c is None:
+            return
+        block = self.jobs[(c + 1):(b + 1)]
+        block_params = find_block_params(block)
+        preparation_backup = self.jobs[c].preparation
+        self.jobs[c].preparation = max(self.jobs[c].preparation, block_params[0] + block_params[1])
+        lower_bound = schrage_pmtn_heaps(self.jobs)
+        lower_bound = max(
+            sum(block_params),
+            sum(find_block_params(block + [self.jobs[c]])),
+            lower_bound
+        )
+        if lower_bound < self.upper_bound:
+            self._queue.append(deepcopy(self.jobs))
+        self.jobs[c].preparation = preparation_backup
+        delivery_backup = self.jobs[c].delivery
+        self.jobs[c].delivery = max(self.jobs[c].delivery, block_params[1] + block_params[2])
+        lower_bound = schrage_pmtn_heaps(self.jobs)
+        lower_bound = max(
+            sum(block_params),
+            sum(find_block_params(block + [self.jobs[c]])),
+            lower_bound
+        )
+        if lower_bound < self.upper_bound:
+            self._queue.append(deepcopy(self.jobs))
+        self.jobs[c].delivery = delivery_backup
+        return
+
+    def _find_a(self, b_index: int, makespan: int) -> int:
+        """Find 'a' job for Carlier algorithm."""
+        p_sum = sum(job.execution for job in self.jobs[:b_index + 1])
+        q_max = self.jobs[b_index].delivery
+        for i, job in enumerate(self.jobs):
+            if i > b_index:
+                raise ValueError("Job 'a' not found.")
+            if job.preparation + p_sum + q_max == makespan:
+                return i
+            p_sum -= job.execution
+
+    def _find_c(self, a_index: int, b_index: int) -> Optional[int]:
+        """Find 'c' job for Carlier algorithm."""
+        greater_deliveries = [index for index, job
+                              in enumerate(self.jobs[a_index:b_index])
+                              if job.delivery < self.jobs[b_index].delivery]
+        return greater_deliveries[-1] + a_index if greater_deliveries else None
+
+    @staticmethod
+    def _find_block_params(block: List[Job]):
+        """Find R, P, Q parameters for critical path in Carlier's algorithm."""
+        return (min(job.preparation for job in block), sum(job.execution for job in block),
+                min(job.delivery for job in block))
+
+
 def carlier(jobs: List[Job], best_perm=None):
     """Implementation of Carlier algorithm."""
     jobs = schrage_heaps(jobs)

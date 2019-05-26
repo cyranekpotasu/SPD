@@ -6,10 +6,10 @@ from copy import deepcopy
 import numpy as np
 import matplotlib.pyplot as plt
 
-from job import Job
-from scheduler import (schrage_algorithm, compute_makespan,
+from lab4.job import Job
+from lab4.scheduler import (schrage_algorithm, compute_makespan,
                             schrage_pmtn, schrage_heaps, schrage_pmtn_heaps,
-                            sim_annealing, carlier)
+                            sim_annealing, carlier, Carlier)
 
 
 def generate_jobs(count):
@@ -61,17 +61,15 @@ def plot_schrage_pmtn():
 
 if __name__ == '__main__':
     for path in os.listdir('data'):
-
-
-        if path == 'in002.txt':
-            continue
         job_data = np.loadtxt(f'data/{path}', dtype=int, skiprows=1)
         jobs = [Job(job_id, *times) for job_id, times in enumerate(job_data, 1)]
         makespan = schrage_pmtn_heaps(jobs)
         
         # print(f'Perm for {path} (using heaps): {[job.id for job in perm]}')
         print(f'Makespan for {path} (using heaps): {makespan}')
-        perm = carlier(jobs)
+        carlier_sched = Carlier(jobs)
+        perm = carlier_sched.schedule()
         makespan = compute_makespan(perm)
         # print(f'Perm for {path} (carlier): {[job.id for job in perm]}')
         print(f'Makespan for {path} (carlier): {makespan}')
+        print(f'Tree extensions: {carlier_sched.nodes}')
