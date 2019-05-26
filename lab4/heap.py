@@ -1,7 +1,7 @@
 """Module with implementations of heaps."""
 from typing import NamedTuple, List, Optional, Iterable
 
-from lab4.job import Job
+from job import Job
 
 
 class HeapObject(NamedTuple):
