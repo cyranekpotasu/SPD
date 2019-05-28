@@ -1,3 +1,4 @@
+from collections import namedtuple
 from typing import List, Tuple, Optional
 
 from ortools.linear_solver import pywraplp
@@ -49,14 +50,14 @@ def solve_rpq_cp(jobs: List[Job]):
     makespan = model.NewIntVar(0, upper_bound, 'makespan')
 
     intervals = []
-    job_vars = []
+    job_vars = {}
     for job in jobs:
         start_var = model.NewIntVar(0, upper_bound, f'start_{job.id}')
         end_var = model.NewIntVar(0, upper_bound, f'end_{job.id}')
         interval_var = model.NewIntervalVar(start_var, job.execution,
                                             end_var, f'interval_{job.id}')
         intervals.append(interval_var)
-        job_vars.append({'start': start_var, 'end': end_var})
+        job_vars[job.id] = ({'start': start_var, 'end': end_var})
 
     model.AddNoOverlap(intervals)
 
