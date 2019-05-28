@@ -6,10 +6,7 @@ from copy import deepcopy
 import numpy as np
 import matplotlib.pyplot as plt
 
-from job import Job
-from scheduler import (schrage_algorithm, compute_makespan,
-                            schrage_pmtn, schrage_heaps, schrage_pmtn_heaps,
-                            sim_annealing, carlier, Carlier)
+from lab4.job import Job
 
 from lab4.scheduler import solve_rpq
 
