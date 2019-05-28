@@ -1,10 +1,7 @@
 import os
 import random
-import time
-from copy import deepcopy
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 from lab4.job import Job
 
@@ -21,5 +18,6 @@ if __name__ == '__main__':
             print(path)
             job_data = np.loadtxt(f'data/{path}', dtype=int, skiprows=1)
             jobs = [Job(job_id, *times) for job_id, times in enumerate(job_data)]
-            makespan = solve_rpq_cp(jobs)
-            print(makespan)
+            makespan, permutation = solve_rpq_cp(jobs)
+            print(f'Makespan: {makespan}')
+            print(f'Permutation: {permutation}')

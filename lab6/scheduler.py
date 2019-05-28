@@ -69,6 +69,10 @@ def solve_rpq_cp(jobs: List[Job]):
     solver = cp_model.CpSolver()
     solver.Solve(model)
 
-    return solver.ObjectiveValue()
+    start_times = [(job.id, solver.Value(job_vars[job.id]['start'])) for job in jobs]
+
+    permutation = [job_id for job_id, _ in sorted(start_times, key=lambda x: x[1])]
+
+    return solver.ObjectiveValue(), permutation
 
 
