@@ -1,6 +1,7 @@
 from typing import List, Tuple, Optional
 
 from ortools.linear_solver import pywraplp
+from ortools.sat.python import cp_model
 
 from lab4.job import Job
 
@@ -40,12 +41,34 @@ def solve_rpq(jobs: List[Job]):
     print(solver.Objective().Value())
 
 
+def solve_rpq_cp(jobs: List[Job]):
+    """Solve RPQ problem using Constraint Programming."""
+    model = cp_model.CpModel()
+    upper_bound = int(sum(job.total for job in jobs))
 
+    makespan = model.NewIntVar(0, upper_bound, 'makespan')
 
+    intervals = []
+    job_vars = []
+    for job in jobs:
+        start_var = model.NewIntVar(0, upper_bound, f'start_{job.id}')
+        end_var = model.NewIntVar(0, upper_bound, f'end_{job.id}')
+        interval_var = model.NewIntervalVar(start_var, job.execution,
+                                            end_var, f'interval_{job.id}')
+        intervals.append(interval_var)
+        job_vars.append({'start': start_var, 'end': end_var})
 
+    model.AddNoOverlap(intervals)
 
+    for job in jobs:
+        model.Add(job_vars[job.id]['start'] >= job.preparation)
+        model.Add(job_vars[job.id]['end'] + job.delivery <= makespan)
 
+    model.Minimize(makespan)
 
+    solver = cp_model.CpSolver()
+    solver.Solve(model)
 
+    return solver.ObjectiveValue()
 
 
