@@ -38,10 +38,10 @@ if __name__ == '__main__':
         makespan = solve_witi(job_data)
         print(f'Makespan: {makespan}')
 
-    # print('Job shop scheduling: ')
-    # for path in os.listdir('data_jobshop'):
-    #     if path == 'in000.txt' or path == 'in010.txt':
-    #         print(path)
-    #         job_data = get_jobshop_data(f'data_jobshop/{path}')
-    #         makespan = solve_job_shop(job_data)
-    #         print(f'Makespan: {makespan}')
+    print('Job shop scheduling: ')
+    for path in os.listdir('data_jobshop'):
+        if path == 'in000.txt' or path == 'in010.txt':
+            print(path)
+            job_data = get_jobshop_data(f'data_jobshop/{path}')
+            makespan = solve_job_shop(job_data)
+            print(f'Makespan: {makespan}')
