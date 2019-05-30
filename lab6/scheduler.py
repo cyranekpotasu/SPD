@@ -7,6 +7,7 @@ from ortools.sat.python import cp_model
 
 from lab4.job import Job
 
+JobShopTaskData = List[List[Tuple[int, int]]]
 
 def solve_rpq(jobs: List[Job]):
     solver = pywraplp.Solver('rpq_mip', pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
@@ -112,3 +113,48 @@ def solve_witi(jobs_data: np.ndarray):
 
     return solver.ObjectiveValue()
 
+
+def solve_job_shop(jobs_data: JobShopTaskData):
+    """Solve job shop problem using CP."""
+    model = cp_model.CpModel()
+
+    machine_count = max(task[0] for job in jobs_data for task in job)
+
+    upper_bound = sum(task[1] for job in jobs_data for task in job)
+
+
+    all_tasks = {}
+    for job_id, job in enumerate(jobs_data, 1):
+        for task_id, task in enumerate(job, 1):
+            start_var = model.NewIntVar(0, upper_bound, f'start_{job_id}_{task_id}')
+            end_var = model.NewIntVar(0, upper_bound, f'end_{job_id}_{task_id}')
+            interval_var = model.NewIntervalVar(start_var, task[1], end_var,
+                                                f'interval_{job_id}_{task_id}')
+            all_tasks[job_id, task_id] = {'start': start_var, 'end': end_var,
+                                          'interval': interval_var}
+
+    for machine_id in range(1, machine_count + 1):
+        intervals = []
+        for job_id, job in enumerate(jobs_data, 1):
+            for task_id, task in enumerate(job, 1):
+                if task[0] == machine_id:
+                    intervals.append(all_tasks[job_id, task_id]['interval'])
+        model.AddNoOverlap(intervals)
+
+    for job_id, job in enumerate(jobs_data, 1):
+        for task_id in range(1, len(job)):
+            model.Add(all_tasks[job_id, task_id]['end']
+                      <= all_tasks[job_id, task_id + 1]['start'])
+
+    makespan = model.NewIntVar(0, upper_bound, 'makespan')
+
+    model.AddMaxEquality(
+        makespan,
+        [all_tasks[job_id, len(job)]['end'] for job_id, job in enumerate(jobs_data, 1)]
+    )
+
+    model.Minimize(makespan)
+    solver = cp_model.CpSolver()
+    solver.Solve(model)
+
+    return solver.ObjectiveValue()
