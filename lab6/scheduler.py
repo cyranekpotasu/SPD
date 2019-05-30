@@ -1,6 +1,7 @@
 from collections import namedtuple
 from typing import List, Tuple, Optional
 
+import numpy as np
 from ortools.linear_solver import pywraplp
 from ortools.sat.python import cp_model
 
@@ -76,4 +77,38 @@ def solve_rpq_cp(jobs: List[Job]):
 
     return solver.ObjectiveValue(), permutation
 
+
+def solve_witi(jobs_data: np.ndarray):
+    """Solve WiTi problem using CP."""
+    witi_job = namedtuple('witijob', 'duration weight end_time')
+    jobs = [witi_job(*job) for job in jobs_data]
+
+    model = cp_model.CpModel()
+
+    total_makespan = int(sum(job.duration for job in jobs))
+
+    intervals = []
+    delays = []
+    for i, job in enumerate(jobs):
+        start_var = model.NewIntVar(0, total_makespan, f'job_{i}')
+        end_var = model.NewIntVar(0, total_makespan, f'job_{i}')
+        interval_var = model.NewIntervalVar(start_var, job.duration, end_var, f'interval_{i}')
+        delay_var = model.NewIntVar(0, total_makespan, f'delay_{i}')
+
+        model.Add(delay_var >= 0)
+        model.Add(delay_var >= end_var - job.end_time)
+
+        intervals.append(interval_var)
+        delays.append(delay_var)
+
+    model.AddNoOverlap(intervals)
+
+    total_cost = sum(delays[i] * job.weight for i, job in enumerate(jobs))
+
+    model.Minimize(total_cost)
+
+    solver = cp_model.CpSolver()
+    solver.Solve(model)
+
+    return solver.ObjectiveValue()
 
