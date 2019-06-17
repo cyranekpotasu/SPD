@@ -122,7 +122,6 @@ def solve_job_shop(jobs_data: JobShopTaskData):
 
     upper_bound = sum(task[1] for job in jobs_data for task in job)
 
-
     all_tasks = {}
     for job_id, job in enumerate(jobs_data, 1):
         for task_id, task in enumerate(job, 1):

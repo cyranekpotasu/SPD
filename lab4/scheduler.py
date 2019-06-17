@@ -1,8 +1,11 @@
+from concurrent.futures.process import ProcessPoolExecutor
 from copy import deepcopy
+from dataclasses import dataclass, field
+from multiprocessing import Process
 from typing import List, Tuple, Optional
+import queue
 
 import numpy as np
-from ortools.linear_solver import pywraplp
 
 from heap import Heap, HeapObject
 from job import Job
@@ -120,7 +123,7 @@ def schrage_heaps(jobs: List[Job]) -> List[Job]:
     return perm
 
 
-def schrage_pmtn_heaps(jobs: List[Job]) -> List[Job]:
+def schrage_pmtn_heaps(jobs: List[Job]) -> int:
     """Implementation of Schrage algorithm with interrupts using heaps."""
     jobs = deepcopy(jobs)
     jobs_heap = Heap([HeapObject(job, job.preparation) for job in jobs])
@@ -175,18 +178,45 @@ def random_insert(source_list: List[Job]):
     return result_list
 
 
+@dataclass(order=True)
+class CarlierTask:
+    priority: int
+    job: Job = field(compare=False)
+
+
 class Carlier:
     """Carlier algorithm scheduler."""
-    def __init__(self, jobs: List[Job]):
+    DEEPLEFT = 'deepleft'
+    WIDELEFT = 'wideleft'
+    GREEDY = 'greedy'
+
+    STRATEGY_DICT = {
+        DEEPLEFT: queue.LifoQueue,
+        WIDELEFT: queue.Queue,
+        GREEDY: queue.PriorityQueue
+    }
+
+    def __init__(self, jobs: List[Job], strategy: str = DEEPLEFT):
         self.jobs = deepcopy(jobs)
         self.best_perm = self.jobs
         self.upper_bound = max(makespan_list(self.best_perm))
-        self._queue = [self.jobs]
+        if strategy not in [self.DEEPLEFT, self.WIDELEFT, self.GREEDY]:
+            raise ValueError('Invalid strategy.')
+        self.strategy = strategy
+        self._queue = self.STRATEGY_DICT[strategy]()
+        if strategy == self.GREEDY:
+            makespan = schrage_pmtn_heaps(self.jobs)
+            self._queue.put(CarlierTask(makespan, self.jobs))
+        else:
+            self._queue.put(self.jobs)
         self.nodes = 0
 
     def schedule(self):
-        while self._queue:
-            self.jobs = self._queue.pop(0)
+        while not self._queue.empty():
+            if self.strategy == self.GREEDY:
+                self.jobs = self._queue.get().job
+            else:
+                self.jobs = self._queue.get()
             self._carlier_node()
             self.nodes += 1
         return self.best_perm
@@ -214,7 +244,10 @@ class Carlier:
             lower_bound
         )
         if lower_bound < self.upper_bound:
-            self._queue.append(deepcopy(self.jobs))
+            if self.strategy == self.GREEDY:
+                self._queue.put(CarlierTask(lower_bound, deepcopy(self.jobs)))
+            else:
+                self._queue.put(deepcopy(self.jobs))
         self.jobs[c].preparation = preparation_backup
         delivery_backup = self.jobs[c].delivery
         self.jobs[c].delivery = max(self.jobs[c].delivery, block_params[1] + block_params[2])
@@ -225,7 +258,10 @@ class Carlier:
             lower_bound
         )
         if lower_bound < self.upper_bound:
-            self._queue.append(deepcopy(self.jobs))
+            if self.strategy == self.GREEDY:
+                self._queue.put(CarlierTask(lower_bound, deepcopy(self.jobs)))
+            else:
+                self._queue.put(deepcopy(self.jobs))
         self.jobs[c].delivery = delivery_backup
         return
 
@@ -252,6 +288,67 @@ class Carlier:
         """Find R, P, Q parameters for critical path in Carlier's algorithm."""
         return (min(job.preparation for job in block), sum(job.execution for job in block),
                 min(job.delivery for job in block))
+
+
+class ParallelCarlier(Carlier):
+    """Parallel implementation of Carlier algorithm."""
+    def _carlier_node(self):
+        self.jobs = schrage_heaps(self.jobs)
+        cmax_list = makespan_list(self.jobs)
+        makespan = max(cmax_list)
+        if self.upper_bound > makespan:
+            self.upper_bound = makespan
+            self.best_perm = deepcopy(self.jobs)
+        b = cmax_list.argmax()
+        a = self._find_a(b, makespan)
+        c = self._find_c(a, b)
+        if c is None:
+            return
+        block = self.jobs[(c + 1):(b + 1)]
+        block_params = find_block_params(block)
+
+
+        p1 = Process(target=self._right_node_thread, args=(deepcopy(self.jobs), block, block_params, c))
+        p2 = Process(target=self._left_node_thread, args=(deepcopy(self.jobs), block, block_params, c, self._queue))
+
+        p1.start()
+        p2.start()
+        p1.join()
+        p2.join()
+        # with ProcessPoolExecutor() as executor:
+        #     executor.submit(self._left_node_thread, deepcopy(self.jobs), block, block_params, c)
+        #     executor.submit(self._right_node_thread, deepcopy(self.jobs), block, block_params, c)
+
+    def _left_node_thread(self, jobs, block, block_params, c, queue):
+        jobs[c].preparation = max(jobs[c].preparation, block_params[0] + block_params[1])
+        lower_bound = schrage_pmtn_heaps(jobs)
+        lower_bound = max(
+            sum(block_params),
+            sum(find_block_params(block + [jobs[c]])),
+            lower_bound
+        )
+        print(lower_bound)
+        print(self.upper_bound)
+        if lower_bound < self.upper_bound:
+            if self.strategy == self.GREEDY:
+                queue.put(CarlierTask(lower_bound, jobs))
+                print(f'LEFT EMPTY: {self._queue.empty()}')
+            else:
+                queue.put(jobs)
+
+    def _right_node_thread(self, jobs, block, block_params, c):
+        jobs[c].delivery = max(jobs[c].delivery, block_params[1] + block_params[2])
+        lower_bound = schrage_pmtn_heaps(jobs)
+        lower_bound = max(
+            sum(block_params),
+            sum(find_block_params(block + [jobs[c]])),
+            lower_bound
+        )
+        if lower_bound < self.upper_bound:
+            if self.strategy == self.GREEDY:
+                self._queue.put(CarlierTask(lower_bound, jobs))
+            else:
+                self._queue.put(jobs)
 
 
 def carlier(jobs: List[Job], best_perm=None):

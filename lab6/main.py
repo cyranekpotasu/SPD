@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     print('Job shop scheduling: ')
     for path in os.listdir('data_jobshop'):
-        if path == 'in000.txt' or path == 'in010.txt':
+        if path in ['in000.txt', 'in010.txt', 'in020.txt', 'in030.txt']:
             print(path)
             job_data = get_jobshop_data(f'data_jobshop/{path}')
             makespan = solve_job_shop(job_data)
