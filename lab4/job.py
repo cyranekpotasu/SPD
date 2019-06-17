@@ -7,6 +7,10 @@ class Job:
         self.execution = execution
         self.delivery = delivery
 
+    @property
+    def total(self):
+        return self.preparation + self.execution + self.delivery
+
     def __eq__(self, other):
         return self.id == other.id
 
